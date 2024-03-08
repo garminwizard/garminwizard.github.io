@@ -396,6 +396,7 @@ function PopulateMatchingProductResults()
         FROM products
         GROUP BY productId
         ORDER BY price`;
+        updateNumberOfUniqueSpecsBadge(0);
     } 
     else 
     {
