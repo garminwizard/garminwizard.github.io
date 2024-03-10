@@ -42,8 +42,7 @@ function addGarminWizard() {
 
     groupedSpecs = groupProductSpecsBySpecGroupKeyDisplayName(result);
 
-    createCheckboxToExpandAndCollapseAllTables();
-    //createCheckboxToInvertSpecificationRequirements();
+    CreateControlButtons();
 
     iterateOverTheGroupedSpecsAndCreateHTMLElements(groupedSpecs);
     PopulateMatchingProductResults();
@@ -234,21 +233,17 @@ function CreateCheckbox(key, value, groupName) {
     return checkbox;     
 }
 
-function createCheckboxToExpandAndCollapseAllTables()
+function CreateControlButtons()
 {
-    var checkbox = document.createElement('input');
-    checkbox.classList.add("garmin-checkbox");
-    checkbox.type = 'checkbox';
-    checkbox.addEventListener('click',function() {
-        if (checkbox.checked) {
-            expandAll();
-        } else {
-            collapseAll();
-        }
-    });
-
     var expandAllButton = document.getElementById('expand-all-button');
-    expandAllButton.appendChild(checkbox);
+    var collapseAllButton = document.getElementById('collapse-all-button');
+    var checkAllButton = document.getElementById('check-all-button');
+    var uncheckAllButton = document.getElementById('uncheck-all-button');
+
+    expandAllButton.addEventListener('click', expandAll);
+    collapseAllButton.addEventListener('click', collapseAll);
+    checkAllButton.addEventListener('click', CheckAll);
+    uncheckAllButton.addEventListener('click', UnCheckAll);
 }
 
 function createCheckboxToInvertSpecificationRequirements()
@@ -285,6 +280,24 @@ function collapseAll() {
         content.classList.add('garmincollapsed');
     });
 }
+
+function CheckAll() {
+    var selectedCheckBoxes = getAllUnCheckedSpecificationCheckBoxes();
+    selectedCheckBoxes.forEach(checkbox => {
+        checkbox.checked = true; 
+    });
+    PopulateMatchingProductResults();
+}
+
+function UnCheckAll() {
+    var selectedCheckBoxes = getAllCheckedSpecificationCheckBoxes();
+    selectedCheckBoxes.forEach(checkbox => {
+        checkbox.checked = false; 
+    });
+    PopulateMatchingProductResults();
+}
+
+
 // Function to update badge count
 function updateBadgeCount(groupName) {
     const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-group="${groupName}"]`);
@@ -387,7 +400,7 @@ function PopulateMatchingProductResults()
 
     // Get the checked speckeys
     const checkedSpecs = {};
-    var selectedCheckBoxes = getAllCheckSpecificationCheckBoxes();
+    var selectedCheckBoxes = getAllCheckedSpecificationCheckBoxes();
 
     var sqlQuery = "";
     if(selectedCheckBoxes.length == 0) 
@@ -427,6 +440,7 @@ function PopulateMatchingProductResults()
     if(matchingProducts.length == 0)
     {
         resultContainer.innerHTML = 'Could not find any matching products';
+        updateMatchingProductsBadge(0);
     }
     else
     {
@@ -452,9 +466,14 @@ function PopulateMatchingProductResults()
     }
 }
 
-function getAllCheckSpecificationCheckBoxes() 
+function getAllCheckedSpecificationCheckBoxes() 
 {
     return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox:checked');    
+}
+
+function getAllUnCheckedSpecificationCheckBoxes() 
+{
+    return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox:not(:checked)');
 }
 
 function generateTheQueryAcrossAllSpecificationGroups(checkedSpecs) 
