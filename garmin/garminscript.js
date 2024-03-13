@@ -613,7 +613,7 @@ function updateCompareButtonState() {
 // Function to handle button click
 function compareProducts() {
     var selectedProductResultCheckboxes = getAllProductResultCheckBoxes();
-    var compareUrl = "https://www.garmin.com/compare/?compareProduct=";
+    var compareUrl = "https://www.garmin.com/en-US/compare/?compareProduct=";
     selectedProductResultCheckboxes.forEach(function(checkbox, index) {
         compareUrl += checkbox.value;
         if (index < selectedProductResultCheckboxes.length - 1) {
