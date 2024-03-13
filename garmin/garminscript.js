@@ -282,26 +282,62 @@ function collapseAll() {
 }
 
 function CheckAll() {
-    var selectedCheckBoxes = getAllUnCheckedSpecificationCheckBoxes();
+    var selectedCheckBoxes = getAllSpecificationCheckBoxes();
+
+    var previousGroupName = "";
+    var currentGroupName = "";
+    var firstGroup = true;
+    var checkBoxesInGroup = 0;
     selectedCheckBoxes.forEach(checkbox => {
         checkbox.checked = true; 
+        checkBoxesInGroup++;
+        currentGroupName = checkbox.getAttribute("data-group");
+        if(firstGroup == true)
+        {
+            firstGroup = false;
+            previousGroupName = currentGroupName;
+        }
+        if( currentGroupName != previousGroupName)
+        {
+            UpdateBadgeCountWithNumber(previousGroupName, checkBoxesInGroup);
+            previousGroupName = currentGroupName;
+            checkBoxesInGroup = 0;
+        }
     });
+    UpdateBadgeCountWithNumber(currentGroupName, checkBoxesInGroup);
+
     PopulateMatchingProductResults();
 }
 
 function UnCheckAll() {
-    var selectedCheckBoxes = getAllCheckedSpecificationCheckBoxes();
+    var selectedCheckBoxes = getAllSpecificationCheckBoxes();
+    var previousGroupName = "";
     selectedCheckBoxes.forEach(checkbox => {
         checkbox.checked = false; 
+        var currentGroupName = checkbox.getAttribute("data-group");
+        if( currentGroupName != previousGroupName)
+        {
+            UpdateBadgeCountWithNumber(currentGroupName, 0);
+            previousGroupName = currentGroupName;
+        }
     });
     PopulateMatchingProductResults();
 }
 
+function UpdateBadgeCountWithNumber(groupName, number)
+{
+    const badge = document.querySelector(`.garminbadge[data-group="${groupName}"]`);
+    if (number > 0) {
+        badge.textContent = number;
+        badge.style.display = 'inline-block'; // Show the badge
+    } else {
+        badge.style.display = 'none'; // Hide the badge
+    }    
+}
 
 // Function to update badge count
 function updateBadgeCount(groupName) {
     const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-group="${groupName}"]`);
-    const badge = document.querySelector(`.garminbadge[data-group="${groupName}"]`);
 
     let selectedCount = 0;
     checkboxes.forEach(checkbox => {
@@ -309,13 +345,7 @@ function updateBadgeCount(groupName) {
             selectedCount++;
         }
     });
-
-    if (selectedCount > 0) {
-        badge.textContent = selectedCount;
-        badge.style.display = 'inline-block'; // Show the badge
-    } else {
-        badge.style.display = 'none'; // Hide the badge
-    }    
+    UpdateBadgeCountWithNumber(groupName, selectedCount);
 }
 
 function populateNumberOfUniqueProducts()
@@ -474,6 +504,11 @@ function getAllCheckedSpecificationCheckBoxes()
 function getAllUnCheckedSpecificationCheckBoxes() 
 {
     return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox:not(:checked)');
+}
+
+function getAllSpecificationCheckBoxes() 
+{
+    return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox');
 }
 
 function generateTheQueryAcrossAllSpecificationGroups(checkedSpecs) 
