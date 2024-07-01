@@ -160,10 +160,10 @@ function iterateOverTheGroupedSpecsAndCreateHTMLElements(groupedSpecs)
                     cell4InvertedResultTitle.classList.remove('garmintitle-without-content');
                     cell4InvertedResultTitle.classList.add('garmintitle-with-content');
                 } else {
-                    cell4ResultTitle.classList.add('garmintitle-without-content');
                     cell4ResultTitle.classList.remove('garmintitle-with-content');
-                    ClearCell(cell4Result);
-                    ClearCell(cell4InvertedResult);
+                    cell4ResultTitle.classList.add('garmintitle-without-content');
+                    cell4InvertedResultTitle.classList.remove('garmintitle-with-content');
+                    cell4InvertedResultTitle.classList.add('garmintitle-without-content');
                 }
                 PopulateMatchingProductResults();
             });
@@ -550,6 +550,7 @@ function generateTheQueryAcrossAllSpecificationGroups(checkedSpecs)
     FROM products
     WHERE ${query}
     GROUP BY displayName
+    HAVING COUNT(specKey) = ${numberOfUniqueSpecs}
     ORDER BY price
     `;
 
