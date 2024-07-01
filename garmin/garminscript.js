@@ -164,6 +164,10 @@ function iterateOverTheGroupedSpecsAndCreateHTMLElements(groupedSpecs)
                     cell4ResultTitle.classList.add('garmintitle-without-content');
                     cell4InvertedResultTitle.classList.remove('garmintitle-with-content');
                     cell4InvertedResultTitle.classList.add('garmintitle-without-content');
+                    cell4Result.classList.remove('garminexpanded');
+                    cell4Result.classList.add('garmincollapsed');
+                    cell4InvertedResult.classList.remove('garminexpanded');
+                    cell4InvertedResult.classList.add('garmincollapsed');
                 }
                 PopulateMatchingProductResults();
             });
@@ -394,7 +398,7 @@ function getFormattedPrice(unformattedPrice)
 function PopulateCellWithInvertedProducts(element, speckey, specvalue) {
     var finalQuery = getBeginInversion();
 
-    finalQuery += `SELECT productId, displayName, productUrl FROM products where specKey="${speckey}" and specValue="${specvalue}"`;
+    finalQuery += `SELECT productId, displayName, productUrl FROM products where specKey="${speckey}" and specValue="${specvalue}" order by price asc`;
 
     finalQuery += getEndInversion();
 
@@ -402,7 +406,8 @@ function PopulateCellWithInvertedProducts(element, speckey, specvalue) {
     var result = db.exec(finalQuery);
 
     result[0].values.forEach(row => {
-        element.innerHTML += `<a target="_blank" href="${row[2]}">${row[1]}</a><br/>`;
+        var price = getFormattedPrice(row[3]);
+        element.innerHTML += `<a target="_blank" href="${row[2]}">${row[1]}</a> ${price}<br/>`;
     });
 }
 
@@ -563,7 +568,7 @@ function generateTheQueryAcrossAllSpecificationGroups(checkedSpecs)
 
 function getBeginInversion()
 {
-    return `SELECT p.productId, p.displayName, p.productUrl
+    return `SELECT p.productId, p.displayName, p.productUrl, p.price
     FROM products p
     LEFT JOIN (`;    
 }
@@ -572,7 +577,7 @@ function getEndInversion()
 {
     return `) hasSpecifications ON p.productId = hasSpecifications.productId
     WHERE hasSpecifications.productId is null
-    GROUP BY p.displayName;`    
+    GROUP BY p.displayName ORDER by p.price;`    
 }
 
 function ClearCell(element) {
