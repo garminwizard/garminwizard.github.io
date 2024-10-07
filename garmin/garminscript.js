@@ -34,6 +34,7 @@ function startGarminWizard()
     });
 }
 function addGarminWizard() {
+    populateDateOfDownloading();
     populateNumberOfUniqueProducts();
     populateNumberOfUniqeSpecifications();
 
@@ -352,15 +353,41 @@ function updateBadgeCount(groupName) {
     UpdateBadgeCountWithNumber(groupName, selectedCount);
 }
 
+function populateDateOfDownloading()
+{
+    var result = db.exec("SELECT last_updated FROM last_update;");
+    var lastUpdated = result[0].values[0];
+    // Convert the SQLite date string to a JavaScript Date object
+    var dateObject = new Date(lastUpdated);
+
+    // Format the date to a more readable format (e.g., "October 7, 2024, 12:34 PM")
+    var options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: true  // Display 12-hour time with AM/PM
+    };
+    var formattedDate = new Intl.DateTimeFormat('en-US', options).format(dateObject);
+
+    console.log(`Last updated: ${formattedDate}`);
+
+    var div = document.getElementById("productDownloadDatePlaceholder");
+    div.innerHTML += formattedDate;  // Add the formatted date to the div
+}
+
 function populateNumberOfUniqueProducts()
 {
     var result = db.exec("SELECT COUNT(DISTINCT productId) AS NumberOfProducts FROM products;");
-    numberOfProducts = result[0].values[0];
+    var numberOfProducts = result[0].values[0];
     console.log(`Number of products:${numberOfProducts}`);
     var div = document.getElementById("productCountPlaceholder");
     div.innerHTML += numberOfProducts;
 
 }
+
 function populateNumberOfUniqeSpecifications()
 {
     var result = db.exec("SELECT COUNT(DISTINCT specKey) AS NumberOfSpecifications FROM products;");
