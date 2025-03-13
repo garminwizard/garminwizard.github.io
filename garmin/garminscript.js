@@ -1,1 +1,701 @@
-let config={locateFile:()=>"/garmin/sql-wasm.wasm"};var db=null,invertSpecificationRequirements=!1,numberOfProducts=0;function startGarminWizard(){document.getElementById("loadingIndicator").style.display="block",tabSupport(),initSqlJs(config).then((function(e){console.log("sql.js initialized \ud83c\udf89"),fetch("/garmin/products.db?v=6").then((e=>e.arrayBuffer())).then((t=>{db=new e.Database(new Uint8Array(t)),addGarminWizard(),document.getElementById("loadingIndicator").style.display="none",document.getElementById("garminwizard").style.display="block"})).catch((e=>{console.error("Error loading database:",e),document.getElementById("loadingIndicator").style.display="none",document.getElementById("garminwizard").style.display="block"}))}))}function addGarminWizard(){populateDateOfDownloading(),populateNumberOfUniqueProducts(),populateNumberOfUniqeSpecifications();var e=db.exec("SELECT specGroupKeyDisplayName, specKey, specValue, specDisplayName, specDisplayValue FROM products GROUP BY specGroupKeyDisplayName, specKey, specValue ORDER BY specGroupKeyDisplayName, specKey");groupedSpecs=groupProductSpecsBySpecGroupKeyDisplayName(e),CreateControlButtons(),iterateOverTheGroupedSpecsAndCreateHTMLElements(groupedSpecs),PopulateMatchingProductResults()}function iterateOverTheGroupedSpecsAndCreateHTMLElements(e){var t=document.getElementById("garmin");let n=null,a=0,c=0;Object.entries(e).forEach((([e,o])=>{var i=document.createElement("h3");i.textContent=e,i.classList.add("garmintitle");var r=document.createElement("span");r.style.display="none",r.classList.add("garminbadge"),r.textContent="0",r.setAttribute("data-group",e),i.appendChild(r),i.addEventListener("click",(function(){const e=this.nextElementSibling;e.classList.toggle("garminexpanded"),e.classList.toggle("garmincollapsed"),this.classList.toggle("garmin-expanded-arrow")})),t.appendChild(i);var d=document.createElement("div");d.classList.add("garmincollapsed"),d.classList.add("content"),t.appendChild(d);var l=document.createElement("table"),s=document.createElement("tbody");o.forEach((t=>{c++;var o=document.createElement("tr"),i=document.createElement("td"),r=document.createElement("td"),d=document.createElement("td"),l=document.createElement("div");l.innerHTML=t.specdisplayvalue,d.appendChild(l);var u=document.createElement("div");u.innerHTML="<span>Products with specification</span>",u.classList.add("garmintitle-without-content");var p=document.createElement("div");p.setAttribute("id","row"+c+"resultCell"),p.classList.add("garmincollapsed");var m=document.createElement("div");m.innerHTML="<span>Products without specification</span>",m.classList.add("garmintitle-without-content");var g=document.createElement("div");g.setAttribute("id","row"+c+"invertedResultCell"),g.classList.add("garmincollapsed"),d.appendChild(u),d.appendChild(p),d.appendChild(m),d.appendChild(g),u.addEventListener("click",(function(){const e=this.nextElementSibling;e.classList.toggle("garminexpanded"),e.classList.toggle("garmincollapsed"),this.classList.toggle("garmin-expanded-arrow"),e.classList.contains("garminhasbeenexpanded")||(e.classList.add("garminhasbeenexpanded"),PopulateCellWithProducts(p,t.speckey,t.specvalue))})),m.addEventListener("click",(function(){const e=this.nextElementSibling;e.classList.toggle("garminexpanded"),e.classList.toggle("garmincollapsed"),this.classList.toggle("garmin-expanded-arrow"),e.classList.contains("garminhasbeenexpanded")||(e.classList.add("garminhasbeenexpanded"),PopulateCellWithInvertedProducts(g,t.speckey,t.specvalue))}));var h=CreateCheckbox(t.speckey,t.specvalue,e);h.addEventListener("change",(function(){updateBadgeCount(e),h.checked?(u.classList.remove("garmintitle-without-content"),u.classList.add("garmintitle-with-content"),m.classList.remove("garmintitle-without-content"),m.classList.add("garmintitle-with-content")):(u.classList.remove("garmintitle-with-content"),u.classList.add("garmintitle-without-content"),m.classList.remove("garmintitle-with-content"),m.classList.add("garmintitle-without-content"),p.classList.remove("garminexpanded"),p.classList.add("garmincollapsed"),g.classList.remove("garminexpanded"),g.classList.add("garmincollapsed")),PopulateMatchingProductResults()})),i.appendChild(h),r.innerHTML=t.specdisplayname,o.appendChild(i),o.appendChild(r),o.appendChild(d),n!==t.speckey&&(a=1-a),o.style.backgroundColor=0===a?"#aaf0aa":"#00e000",n=t.speckey,s.appendChild(o)})),l.appendChild(s),d.appendChild(l),d.appendChild(document.createElement("br"))}))}function groupProductSpecsBySpecGroupKeyDisplayName(e){var t={};return e[0].values.forEach((e=>{var n={SpecGroupKeyDisplayName:e[0],speckey:e[1],specvalue:e[2],specdisplayname:e[3],specdisplayvalue:e[4]};t[n.SpecGroupKeyDisplayName]||(t[n.SpecGroupKeyDisplayName]=[]),t[n.SpecGroupKeyDisplayName].push(n)})),t}function createProductResultCheckbox(e){var t=document.createElement("input");return t.classList.add("garmin-checkbox"),t.classList.add("garmin-product-result-checkbox"),t.type="checkbox",t.value=e,t}function CreateCheckbox(e,t,n){var a=document.createElement("input");return a.classList.add("garmin-checkbox"),a.classList.add("garmin-specification-checkbox"),a.type="checkbox",a.value=e,a.setAttribute("data-group",n),a.setAttribute("data-value",t),a}function CreateControlButtons(){var e=document.getElementById("expand-all-button"),t=document.getElementById("collapse-all-button"),n=document.getElementById("check-all-button"),a=document.getElementById("uncheck-all-button");e.addEventListener("click",expandAll),t.addEventListener("click",collapseAll),n.addEventListener("click",CheckAll),a.addEventListener("click",UnCheckAll)}function createCheckboxToInvertSpecificationRequirements(){var e=document.createElement("input");e.classList.add("garmin-checkbox"),e.type="checkbox",e.addEventListener("click",(function(){invertSpecificationRequirements=!!e.checked,updateAllResults()})),document.getElementById("invert-checkbox").appendChild(e)}function expandAll(){document.querySelectorAll(".content").forEach((e=>{e.classList.remove("garmincollapsed"),e.classList.add("garminexpanded")}))}function collapseAll(){document.querySelectorAll(".content").forEach((e=>{e.classList.remove("garminexpanded"),e.classList.add("garmincollapsed")}))}function CheckAll(){var e=getAllSpecificationCheckBoxes(),t="",n="",a=!0,c=0;e.forEach((e=>{e.checked=!0,c++,n=e.getAttribute("data-group"),1==a&&(a=!1,t=n),n!=t&&(UpdateBadgeCountWithNumber(t,c),t=n,c=0)})),UpdateBadgeCountWithNumber(n,c),PopulateMatchingProductResults()}function UnCheckAll(){var e=getAllSpecificationCheckBoxes(),t="";e.forEach((e=>{e.checked=!1;var n=e.getAttribute("data-group");n!=t&&(UpdateBadgeCountWithNumber(n,0),t=n)})),PopulateMatchingProductResults()}function UpdateBadgeCountWithNumber(e,t){const n=document.querySelector(`.garminbadge[data-group="${e}"]`);t>0?(n.textContent=t,n.style.display="inline-block"):n.style.display="none"}function updateBadgeCount(e){const t=document.querySelectorAll(`input[type="checkbox"][data-group="${e}"]`);let n=0;t.forEach((e=>{e.checked&&n++})),UpdateBadgeCountWithNumber(e,n)}function populateDateOfDownloading(){var e=db.exec("SELECT last_updated FROM last_update;")[0].values[0],t=new Date(e),n=new Intl.DateTimeFormat("en-US",{year:"numeric",month:"long",day:"numeric",hour:"numeric",minute:"numeric",second:"numeric",hour12:!0}).format(t);console.log(`Last updated: ${n}`),document.getElementById("productDownloadDatePlaceholder").innerHTML+=n}function populateNumberOfUniqueProducts(){var e=db.exec("SELECT COUNT(DISTINCT productId) AS NumberOfProducts FROM products;")[0].values[0];console.log(`Number of products:${e}`),document.getElementById("productCountPlaceholder").innerHTML+=e}function populateNumberOfUniqeSpecifications(){var e=db.exec("SELECT COUNT(DISTINCT specKey) AS NumberOfSpecifications FROM products;")[0].values[0];console.log(`Number of products:${e}`),document.getElementById("specificationCountPlaceholder").innerHTML+=e}function PopulateCellWithProducts(e,t,n){var a=`SELECT productId, displayName, productUrl, price FROM products where specKey="${t}" and specValue="${n}" order by price asc`;console.log(a),db.exec(a)[0].values.forEach((t=>{var n=getFormattedPrice(t[3]);e.innerHTML+=`<a target="_blank" href="${t[2]}">${t[1]}</a> ${n}<br/>`}))}function getFormattedPrice(e){var t=e;return t=null==t?"-":"$"+t+" USD"}function PopulateCellWithInvertedProducts(e,t,n){var a=getBeginInversion();a+=`SELECT productId, displayName, productUrl FROM products where specKey="${t}" and specValue="${n}" order by price asc`,a+=getEndInversion(),console.log(a),db.exec(a)[0].values.forEach((t=>{var n=getFormattedPrice(t[3]);e.innerHTML+=`<a target="_blank" href="${t[2]}">${t[1]}</a> ${n}<br/>`}))}function updateMatchingProductsBadge(e){var t=document.getElementById("matchingProducts");t.classList.remove("garminbadgehidden"),t.classList.add("garminbadge"),t.textContent=e}function updateNumberOfUniqueSpecsBadge(e){var t=document.getElementById("numberOfUniqueSpecs");t.classList.remove("garminbadgehidden"),t.classList.add("garminbadge"),t.textContent=e}function PopulateMatchingProductResults(){var e=document.getElementById("garmin-result");e.innerHTML="";const t={};var n=getAllCheckedSpecificationCheckBoxes(),a="";if(0==n.length)a="SELECT productId, displayName, productUrl, price\n        FROM products\n        GROUP BY productId\n        ORDER BY price",updateNumberOfUniqueSpecsBadge(0);else{n.forEach((e=>{const n=e.getAttribute("data-group");t[n]||(t[n]={});const a=e.value;t[n][a]||(t[n][a]=[]),t[n][a].push(e.getAttribute("data-value"))}));var c=generateTheQueryAcrossAllSpecificationGroups(t);a=c.sqlQuery,updateNumberOfUniqueSpecsBadge(c.numberOfUniqueSpecs)}console.log(a);var o=db.exec(a);if(e.innerHTML="",0==o.length)e.innerHTML="Could not find any matching products",updateMatchingProductsBadge(0);else{var i=document.createElement("div");o[0].values.forEach((e=>{var t=getFormattedPrice(e[3]),n=createProductResultCheckbox(e[0]);n.addEventListener("change",updateCompareButtonState),i.appendChild(n);var a=document.createElement("span");i.appendChild(a),a.innerHTML+=`<a target="_blank" href="${e[2]}">${e[1]}</a> ${t}<br/>`})),e.appendChild(i);var r=createCompareButton();e.appendChild(r);var d=document.createElement("span");d.setAttribute("id","comparisonLink"),e.appendChild(d),updateMatchingProductsBadge(o[0].values.length)}}function getAllCheckedSpecificationCheckBoxes(){return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox:checked')}function getAllUnCheckedSpecificationCheckBoxes(){return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox:not(:checked)')}function getAllSpecificationCheckBoxes(){return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox')}function generateTheQueryAcrossAllSpecificationGroups(e){let t="";invertSpecificationRequirements&&(t=getBeginInversion());let n=0;var a="";return Object.values(e).forEach(((e,t)=>{t>0&&(a+=" OR "),a+="(",Object.entries(e).forEach((([e,t],c)=>{n++,c>0&&(a+=" OR "),t.forEach(((t,n)=>{n>0&&(a+=" OR "),a+=`(specKey = '${e}' AND specValue = '${t}')`}))})),a+=")"})),t+=`\n    SELECT productId, displayName, productUrl, price\n    FROM products\n    WHERE ${a}\n    GROUP BY displayName\n    HAVING COUNT(specKey) = ${n}\n    ORDER BY price\n    `,invertSpecificationRequirements&&(t+=getEndInversion()),{sqlQuery:t,numberOfUniqueSpecs:n}}function getBeginInversion(){return"SELECT p.productId, p.displayName, p.productUrl, p.price\n    FROM products p\n    LEFT JOIN ("}function getEndInversion(){return") hasSpecifications ON p.productId = hasSpecifications.productId\n    WHERE hasSpecifications.productId is null\n    GROUP BY p.displayName ORDER by p.price;"}function ClearCell(e){e.innerHTML=""}function tabSupport(){var e=document.querySelectorAll(".tablinks"),t=document.querySelectorAll(".tabcontent");e.forEach((function(n){n.addEventListener("click",(function(){var n=this.getAttribute("data-page");t.forEach((function(e){e.style.display="none"})),e.forEach((function(e){e.classList.remove("active")})),document.getElementById(n).style.display="block",this.classList.add("active")}))})),document.getElementById("defaultOpen").click()}function createCompareButton(){const e=document.createElement("button");return e.textContent="Select up to 5 products to compare",e.id="compareButton",e.disabled=!0,e.classList.add("big-button"),e.addEventListener("click",compareProducts),document.body.appendChild(e),e}function getAllProductResultCheckBoxes(){return document.querySelectorAll('input[type="checkbox"].garmin-product-result-checkbox:checked')}function updateCompareButtonState(){const e=document.getElementById("compareButton"),t=getAllProductResultCheckBoxes();document.getElementById("comparisonLink").innerHTML="",t.length>5?(e.disabled=!0,e.textContent="Maximum of 5 checkboxes can be selected for comparison."):(e.disabled=!1,e.textContent="Compare products")}function compareProducts(){var e=getAllProductResultCheckBoxes(),t="https://www.garmin.com/en-US/compare/?compareProduct=";e.forEach((function(n,a){t+=n.value,a<e.length-1&&(t+="&compareProduct=")}));document.getElementById("compareButton").disabled=!0;var n=document.getElementById("comparisonLink");const a=document.createElement("a");a.href=t,a.target="_blank",a.textContent="See the comparison on Garmin's page",n.appendChild(a),console.log("Compare url: "+t)}
+//Requires that an element with the id=garmin is present in the DOM.
+
+// Load sql.js WebAssembly file
+let config = {
+    locateFile: () => "/garmin/sql-wasm.wasm",
+};
+
+var db = null;
+var invertSpecificationRequirements = false;
+var numberOfProducts = 0;
+
+function startGarminWizard()
+{
+    document.getElementById("loadingIndicator").style.display = "block";
+
+    tabSupport();
+
+    initSqlJs(config).then(function (SQL) {
+        console.log("sql.js initialized 🎉");
+        fetch('/garmin/products.db?v=6')
+        .then(response => response.arrayBuffer())
+        .then(buffer => {
+            db = new SQL.Database(new Uint8Array(buffer));
+            addGarminWizard();
+           // Hide loading indicator when initialization is complete
+           document.getElementById("loadingIndicator").style.display = "none";
+           document.getElementById("garminwizard").style.display = "block";
+        })
+        .catch(error => {
+            console.error('Error loading database:', error);
+            document.getElementById("loadingIndicator").style.display = "none";
+            document.getElementById("garminwizard").style.display = "block";
+        });
+    });
+}
+function addGarminWizard() {
+    populateDateOfDownloading();
+    populateNumberOfUniqueProducts();
+    populateNumberOfUniqeSpecifications();
+
+    // Execute a query to retrieve distinct product specs
+    var result = db.exec("SELECT specGroupKeyDisplayName, specKey, specValue, specDisplayName, specDisplayValue FROM products GROUP BY specGroupKeyDisplayName, specKey, specValue ORDER BY specGroupKeyDisplayName, specKey");
+
+    groupedSpecs = groupProductSpecsBySpecGroupKeyDisplayName(result);
+
+    CreateControlButtons();
+
+    iterateOverTheGroupedSpecsAndCreateHTMLElements(groupedSpecs);
+    PopulateMatchingProductResults();
+}
+
+// Generate HTML elements for product specs
+// An element with the id "garmin" must be present in the DOM.
+function iterateOverTheGroupedSpecsAndCreateHTMLElements(groupedSpecs)
+{
+    var container = document.getElementById("garmin");
+
+    let previousSpeckey = null; // Variable to track the previous speckey
+    let colorIndex = 0; // Index for alternating background colors
+    let rowId = 0;
+
+    Object.entries(groupedSpecs).forEach(([groupName, specs]) => {
+        var titleElement = document.createElement('h3');
+        titleElement.textContent = groupName;
+        titleElement.classList.add("garmintitle");
+    
+        var badge = document.createElement('span');
+        badge.style.display = 'none'; // Hide the badge
+        badge.classList.add('garminbadge');
+        badge.textContent = '0';
+        badge.setAttribute('data-group', groupName); // Assigning the data-group attribute
+    
+        titleElement.appendChild(badge);
+        
+        titleElement.addEventListener('click', function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle('garminexpanded');
+            content.classList.toggle('garmincollapsed');
+            // Toggle class for rotating the arrow
+            this.classList.toggle('garmin-expanded-arrow');
+        });
+    
+        container.appendChild(titleElement);
+    
+        // Add div to wrap content
+        var contentWrapper = document.createElement('div');
+        contentWrapper.classList.add('garmincollapsed');
+        contentWrapper.classList.add('content');
+        container.appendChild(contentWrapper);
+    
+        var table = document.createElement('table');
+        var tbody = document.createElement('tbody');
+        specs.forEach(spec => {
+            rowId++;
+            var row = document.createElement('tr');
+            var cell1 = document.createElement('td');
+    
+            var cell3 = document.createElement('td');
+    
+            var cell4 = document.createElement('td');
+            var specDisplayValue = document.createElement('div');
+            specDisplayValue.innerHTML = spec.specdisplayvalue; 
+            cell4.appendChild(specDisplayValue);
+    
+            var cell4ResultTitle = document.createElement('div');
+            cell4ResultTitle.innerHTML = "<span>Products with specification</span>";
+            cell4ResultTitle.classList.add('garmintitle-without-content');
+    
+            var cell4Result = document.createElement('div');
+            cell4Result.setAttribute("id", "row" + rowId + "resultCell");
+            cell4Result.classList.add('garmincollapsed');
+
+            var cell4InvertedResultTitle = document.createElement('div');
+            cell4InvertedResultTitle.innerHTML = "<span>Products without specification</span>";
+            cell4InvertedResultTitle.classList.add('garmintitle-without-content');
+
+            var cell4InvertedResult = document.createElement('div');
+            cell4InvertedResult.setAttribute("id", "row" + rowId + "invertedResultCell");
+            cell4InvertedResult.classList.add('garmincollapsed');
+
+            cell4.appendChild(cell4ResultTitle);
+            cell4.appendChild(cell4Result);
+            cell4.appendChild(cell4InvertedResultTitle);
+            cell4.appendChild(cell4InvertedResult);
+    
+            cell4ResultTitle.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                content.classList.toggle('garminexpanded');
+                content.classList.toggle('garmincollapsed');
+                // Toggle class for rotating the arrow
+                this.classList.toggle('garmin-expanded-arrow');
+
+                if (!content.classList.contains('garminhasbeenexpanded')) 
+                {
+                    content.classList.add("garminhasbeenexpanded");
+                    PopulateCellWithProducts(cell4Result, spec.speckey, spec.specvalue);
+                }
+            });            
+
+            cell4InvertedResultTitle.addEventListener('click', function () {
+                const content = this.nextElementSibling;
+                content.classList.toggle('garminexpanded');
+                content.classList.toggle('garmincollapsed');
+                // Toggle class for rotating the arrow
+                this.classList.toggle('garmin-expanded-arrow');
+
+                if (!content.classList.contains('garminhasbeenexpanded')) 
+                {
+                    content.classList.add("garminhasbeenexpanded");
+                    PopulateCellWithInvertedProducts(cell4InvertedResult, spec.speckey, spec.specvalue);
+                }
+            });
+
+            var checkbox = CreateCheckbox(spec.speckey, spec.specvalue, groupName);
+            checkbox.addEventListener('change', function() {
+                updateBadgeCount(groupName); // Update badge count when checkbox state changes
+        
+                if (checkbox.checked) {
+                    cell4ResultTitle.classList.remove('garmintitle-without-content');
+                    cell4ResultTitle.classList.add('garmintitle-with-content');
+                    cell4InvertedResultTitle.classList.remove('garmintitle-without-content');
+                    cell4InvertedResultTitle.classList.add('garmintitle-with-content');
+                } else {
+                    cell4ResultTitle.classList.remove('garmintitle-with-content');
+                    cell4ResultTitle.classList.add('garmintitle-without-content');
+                    cell4InvertedResultTitle.classList.remove('garmintitle-with-content');
+                    cell4InvertedResultTitle.classList.add('garmintitle-without-content');
+                    cell4Result.classList.remove('garminexpanded');
+                    cell4Result.classList.add('garmincollapsed');
+                    cell4InvertedResult.classList.remove('garminexpanded');
+                    cell4InvertedResult.classList.add('garmincollapsed');
+                }
+                PopulateMatchingProductResults();
+            });
+        
+        
+            cell1.appendChild(checkbox);
+            cell3.innerHTML = spec.specdisplayname;
+            row.appendChild(cell1);
+            
+            // Uncomment to get specKey in separate column
+            // row.appendChild(cell2);
+            row.appendChild(cell3);
+            row.appendChild(cell4);
+    
+            // Apply alternating background color based on speckey
+            if (previousSpeckey !== spec.speckey) {
+                colorIndex = 1 - colorIndex; // Toggle color index
+            }
+            row.style.backgroundColor = colorIndex === 0 ? '#aaf0aa' : '#00e000'; // Apply color
+            previousSpeckey = spec.speckey; // Update previous speckey
+    
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        contentWrapper.appendChild(table);
+        contentWrapper.appendChild(document.createElement('br')); // Add line break between tables
+    });
+}
+
+function groupProductSpecsBySpecGroupKeyDisplayName(result) {
+
+    var groupedSpecs = {};
+    result[0].values.forEach(row => {
+        var spec = {
+            SpecGroupKeyDisplayName: row[0],
+            speckey: row[1],
+            specvalue: row[2],
+            specdisplayname: row[3],
+            specdisplayvalue: row[4]
+        };
+        if (!groupedSpecs[spec.SpecGroupKeyDisplayName]) {
+            groupedSpecs[spec.SpecGroupKeyDisplayName] = [];
+        }
+        groupedSpecs[spec.SpecGroupKeyDisplayName].push(spec);
+    });
+    return groupedSpecs;
+}
+
+function createProductResultCheckbox(productId)
+{
+    var checkbox = document.createElement('input');
+    checkbox.classList.add("garmin-checkbox");
+    checkbox.classList.add("garmin-product-result-checkbox");
+    checkbox.type = 'checkbox';
+    checkbox.value = productId;
+    return checkbox;     
+}
+
+function CreateCheckbox(key, value, groupName) {
+    var checkbox = document.createElement('input');
+    checkbox.classList.add("garmin-checkbox");
+    checkbox.classList.add("garmin-specification-checkbox");
+    checkbox.type = 'checkbox';
+    checkbox.value = key;
+    checkbox.setAttribute('data-group', groupName); // Assigning the data-group attribute
+    checkbox.setAttribute('data-value', value);
+    return checkbox;     
+}
+
+function CreateControlButtons()
+{
+    var expandAllButton = document.getElementById('expand-all-button');
+    var collapseAllButton = document.getElementById('collapse-all-button');
+    var checkAllButton = document.getElementById('check-all-button');
+    var uncheckAllButton = document.getElementById('uncheck-all-button');
+
+    expandAllButton.addEventListener('click', expandAll);
+    collapseAllButton.addEventListener('click', collapseAll);
+    checkAllButton.addEventListener('click', CheckAll);
+    uncheckAllButton.addEventListener('click', UnCheckAll);
+}
+
+function createCheckboxToInvertSpecificationRequirements()
+{
+    var checkbox = document.createElement('input');
+    checkbox.classList.add("garmin-checkbox");
+    checkbox.type = 'checkbox';
+    checkbox.addEventListener('click',function() {
+        if (checkbox.checked) {
+            invertSpecificationRequirements = true;
+        } else {
+            invertSpecificationRequirements = false;
+        }
+        updateAllResults();
+    });
+
+    var invertCheckboxElement = document.getElementById('invert-checkbox');
+    invertCheckboxElement.appendChild(checkbox);
+}
+
+
+// Function to expand all tables
+function expandAll() {
+    document.querySelectorAll('.content').forEach(content => {
+        content.classList.remove('garmincollapsed');
+        content.classList.add('garminexpanded');
+    });
+}
+
+// Function to collapse all tables
+function collapseAll() {
+    document.querySelectorAll('.content').forEach(content => {
+        content.classList.remove('garminexpanded');
+        content.classList.add('garmincollapsed');
+    });
+}
+
+function CheckAll() {
+    var selectedCheckBoxes = getAllSpecificationCheckBoxes();
+
+    var previousGroupName = "";
+    var currentGroupName = "";
+    var firstGroup = true;
+    var checkBoxesInGroup = 0;
+    selectedCheckBoxes.forEach(checkbox => {
+        checkbox.checked = true; 
+        checkBoxesInGroup++;
+        currentGroupName = checkbox.getAttribute("data-group");
+        if(firstGroup == true)
+        {
+            firstGroup = false;
+            previousGroupName = currentGroupName;
+        }
+        if( currentGroupName != previousGroupName)
+        {
+            UpdateBadgeCountWithNumber(previousGroupName, checkBoxesInGroup);
+            previousGroupName = currentGroupName;
+            checkBoxesInGroup = 0;
+        }
+    });
+    UpdateBadgeCountWithNumber(currentGroupName, checkBoxesInGroup);
+
+    PopulateMatchingProductResults();
+}
+
+function UnCheckAll() {
+    var selectedCheckBoxes = getAllSpecificationCheckBoxes();
+    var previousGroupName = "";
+    selectedCheckBoxes.forEach(checkbox => {
+        checkbox.checked = false; 
+        var currentGroupName = checkbox.getAttribute("data-group");
+        if( currentGroupName != previousGroupName)
+        {
+            UpdateBadgeCountWithNumber(currentGroupName, 0);
+            previousGroupName = currentGroupName;
+        }
+    });
+    PopulateMatchingProductResults();
+}
+
+function UpdateBadgeCountWithNumber(groupName, number)
+{
+    const badge = document.querySelector(`.garminbadge[data-group="${groupName}"]`);
+    if (number > 0) {
+        badge.textContent = number;
+        badge.style.display = 'inline-block'; // Show the badge
+    } else {
+        badge.style.display = 'none'; // Hide the badge
+    }    
+}
+
+// Function to update badge count
+function updateBadgeCount(groupName) {
+    const checkboxes = document.querySelectorAll(`input[type="checkbox"][data-group="${groupName}"]`);
+
+    let selectedCount = 0;
+    checkboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            selectedCount++;
+        }
+    });
+    UpdateBadgeCountWithNumber(groupName, selectedCount);
+}
+
+function populateDateOfDownloading()
+{
+    var result = db.exec("SELECT last_updated FROM last_update;");
+    var lastUpdated = result[0].values[0];
+    // Convert the SQLite date string to a JavaScript Date object
+    var dateObject = new Date(lastUpdated);
+
+    // Format the date to a more readable format (e.g., "October 7, 2024, 12:34 PM")
+    var options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: true  // Display 12-hour time with AM/PM
+    };
+    var formattedDate = new Intl.DateTimeFormat('en-US', options).format(dateObject);
+
+    console.log(`Last updated: ${formattedDate}`);
+
+    var div = document.getElementById("productDownloadDatePlaceholder");
+    div.innerHTML += formattedDate;  // Add the formatted date to the div
+}
+
+function populateNumberOfUniqueProducts()
+{
+    var result = db.exec("SELECT COUNT(DISTINCT productId) AS NumberOfProducts FROM products;");
+    var numberOfProducts = result[0].values[0];
+    console.log(`Number of products:${numberOfProducts}`);
+    var div = document.getElementById("productCountPlaceholder");
+    div.innerHTML += numberOfProducts;
+
+}
+
+function populateNumberOfUniqeSpecifications()
+{
+    var result = db.exec("SELECT COUNT(DISTINCT specKey) AS NumberOfSpecifications FROM products;");
+    var numberOfSpecifications = result[0].values[0];
+    console.log(`Number of products:${numberOfSpecifications}`);
+    var div = document.getElementById("specificationCountPlaceholder");
+    div.innerHTML += numberOfSpecifications;
+}
+
+function PopulateCellWithProducts(element, speckey, specvalue) {
+    var finalQuery = `SELECT productId, displayName, productUrl, price FROM products where specKey="${speckey}" and specValue="${specvalue}" order by price asc`;
+
+    console.log(finalQuery);
+    var result = db.exec(finalQuery);
+
+    result[0].values.forEach(row => {
+        var price = getFormattedPrice(row[3]);
+        element.innerHTML += `<a target="_blank" href="${row[2]}">${row[1]}</a> ${price}<br/>`;
+    });
+}
+
+function getFormattedPrice(unformattedPrice)
+{
+    var price = unformattedPrice;
+    if(price == null)
+    {
+        price = "-";
+    }
+    else
+    {
+        price = "$" + price + " USD";
+    }
+    return price;
+}
+function PopulateCellWithInvertedProducts(element, speckey, specvalue) {
+    var finalQuery = getBeginInversion();
+
+    finalQuery += `SELECT productId, displayName, productUrl FROM products where specKey="${speckey}" and specValue="${specvalue}" order by price asc`;
+
+    finalQuery += getEndInversion();
+
+    console.log(finalQuery);
+    var result = db.exec(finalQuery);
+
+    result[0].values.forEach(row => {
+        var price = getFormattedPrice(row[3]);
+        element.innerHTML += `<a target="_blank" href="${row[2]}">${row[1]}</a> ${price}<br/>`;
+    });
+}
+
+function updateMatchingProductsBadge(noOfProducts)
+{
+    var badge = document.getElementById("matchingProducts");
+    badge.classList.remove("garminbadgehidden");
+    badge.classList.add("garminbadge");
+    badge.textContent = noOfProducts;
+}
+
+function updateNumberOfUniqueSpecsBadge(noOfUniqueSpecs)
+{
+    var badge = document.getElementById("numberOfUniqueSpecs");
+    badge.classList.remove("garminbadgehidden");
+    badge.classList.add("garminbadge");
+    badge.textContent = noOfUniqueSpecs;
+}
+
+function PopulateMatchingProductResults() 
+{
+    // Create a result container to display matching products
+    var resultContainer = document.getElementById('garmin-result');
+    resultContainer.innerHTML = '';
+
+    // Get the checked speckeys
+    const checkedSpecs = {};
+    var selectedCheckBoxes = getAllCheckedSpecificationCheckBoxes();
+
+    var sqlQuery = "";
+    if(selectedCheckBoxes.length == 0) 
+    {
+        sqlQuery = `SELECT productId, displayName, productUrl, price
+        FROM products
+        GROUP BY productId
+        ORDER BY price`;
+        updateNumberOfUniqueSpecsBadge(0);
+    } 
+    else 
+    {
+        selectedCheckBoxes.forEach(checkbox => {
+            const group = checkbox.getAttribute('data-group');
+            if (!checkedSpecs[group]) {
+                checkedSpecs[group] = {};
+            }
+    
+            const speckey = checkbox.value;
+            if (!checkedSpecs[group][speckey]) {
+                checkedSpecs[group][speckey] = [];
+            }
+            checkedSpecs[group][speckey].push(checkbox.getAttribute('data-value'));
+        });
+    
+        var result = generateTheQueryAcrossAllSpecificationGroups(checkedSpecs);
+        sqlQuery = result.sqlQuery;
+        updateNumberOfUniqueSpecsBadge(result.numberOfUniqueSpecs);
+    }
+
+    // Use sqlQuery in the fetch call to get the desired results
+    console.log(sqlQuery);
+    var matchingProducts = db.exec(sqlQuery);
+    
+    // Clear previous results
+    resultContainer.innerHTML = '';
+    if(matchingProducts.length == 0)
+    {
+        resultContainer.innerHTML = 'Could not find any matching products';
+        updateMatchingProductsBadge(0);
+    }
+    else
+    {
+        var resultDiv = document.createElement('div');
+        matchingProducts[0].values.forEach(row => {
+            var price = getFormattedPrice(row[3]);
+            var matchingProductCheckbox = createProductResultCheckbox(row[0]);
+            matchingProductCheckbox.addEventListener('change', updateCompareButtonState);
+            resultDiv.appendChild(matchingProductCheckbox);
+            var matchingProductDiv = document.createElement('span');
+            resultDiv.appendChild(matchingProductDiv);
+            matchingProductDiv.innerHTML += `<a target="_blank" href="${row[2]}">${row[1]}</a> ${price}<br/>`;
+        });
+    
+        resultContainer.appendChild(resultDiv);
+        var compareButton = createCompareButton();
+        resultContainer.appendChild(compareButton);
+
+        var comparisonLink = document.createElement('span');
+        comparisonLink.setAttribute('id', 'comparisonLink');
+        resultContainer.appendChild(comparisonLink);
+        updateMatchingProductsBadge(matchingProducts[0].values.length);
+    }
+}
+
+function getAllCheckedSpecificationCheckBoxes() 
+{
+    return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox:checked');    
+}
+
+function getAllUnCheckedSpecificationCheckBoxes() 
+{
+    return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox:not(:checked)');
+}
+
+function getAllSpecificationCheckBoxes() 
+{
+    return document.querySelectorAll('input[type="checkbox"].garmin-specification-checkbox');
+}
+
+function generateTheQueryAcrossAllSpecificationGroups(checkedSpecs) 
+{
+    let finalQuery = '';
+
+    if(invertSpecificationRequirements)
+    {
+        finalQuery = getBeginInversion();
+    }
+
+    let numberOfUniqueSpecs = 0
+    var query = '';
+    Object.values(checkedSpecs).forEach((spec, groupIndex) => {
+        if (groupIndex > 0) {
+            query += ' OR ';
+        }
+
+        query += '(';
+        Object.entries(spec).forEach(([speckey, values], specIndex) => 
+        {
+            numberOfUniqueSpecs++;
+            if(specIndex > 0) {
+                query += ' OR ';
+            }
+            values.forEach((value, index) => 
+            {
+                if (index > 0) {
+                    query += ' OR ';
+                }
+                query += `(specKey = '${speckey}' AND specValue = '${value}')`;
+            });
+        });
+        query += ')';
+    });
+
+    finalQuery += `
+    SELECT productId, displayName, productUrl, price
+    FROM products
+    WHERE ${query}
+    GROUP BY displayName
+    HAVING COUNT(specKey) = ${numberOfUniqueSpecs}
+    ORDER BY price
+    `;
+
+    if(invertSpecificationRequirements)
+    {
+        finalQuery += getEndInversion();
+    }
+    return {sqlQuery: finalQuery, numberOfUniqueSpecs: numberOfUniqueSpecs};    
+}
+
+function getBeginInversion()
+{
+    return `SELECT p.productId, p.displayName, p.productUrl, p.price
+    FROM products p
+    LEFT JOIN (`;    
+}
+
+function getEndInversion()
+{
+    return `) hasSpecifications ON p.productId = hasSpecifications.productId
+    WHERE hasSpecifications.productId is null
+    GROUP BY p.displayName ORDER by p.price;`    
+}
+
+function ClearCell(element) {
+    element.innerHTML = "";
+}
+
+
+function tabSupport()
+{
+    // Get all tab buttons and tab contents
+    var tabButtons = document.querySelectorAll('.tablinks');
+    var tabContents = document.querySelectorAll('.tabcontent');
+
+    // Add click event listener to each tab button
+    tabButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var pageName = this.getAttribute('data-page');
+
+            // Hide all tab contents
+            tabContents.forEach(function(content) {
+                content.style.display = 'none';
+            });
+
+            // Remove 'active' class from all tab buttons
+            tabButtons.forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+
+            // Display the clicked tab content and mark the button as active
+            document.getElementById(pageName).style.display = 'block';
+            this.classList.add('active');
+        });
+    });
+    var tab1 = document.getElementById('defaultOpen');
+    tab1.click();
+}
+// Function to create the button
+function createCompareButton() {
+    const button = document.createElement('button');
+    button.textContent = 'Select up to 5 products to compare';
+    button.id = 'compareButton';
+    button.disabled = true; // Initially disabled
+    button.classList.add('big-button');
+    button.addEventListener('click', compareProducts); // Attach click event listener
+    document.body.appendChild(button); // Append button to the body (you can change the parent element)
+
+    return button;
+}
+
+function getAllProductResultCheckBoxes() 
+{
+    return document.querySelectorAll('input[type="checkbox"].garmin-product-result-checkbox:checked');    
+}
+
+
+// Function to handle checkbox changes and update button state
+function updateCompareButtonState() {
+    const compareButton = document.getElementById('compareButton');
+    const checkedCheckboxes = getAllProductResultCheckBoxes();
+
+    var comparisonLink = document.getElementById('comparisonLink');
+    comparisonLink.innerHTML = '';
+
+    if (checkedCheckboxes.length > 5) {
+        compareButton.disabled = true;
+        compareButton.textContent = "Maximum of 5 checkboxes can be selected for comparison.";
+    } else {
+        compareButton.disabled = false;
+        compareButton.textContent = "Compare products";
+    }
+}
+
+// Function to handle button click
+function compareProducts() {
+    var selectedProductResultCheckboxes = getAllProductResultCheckBoxes();
+    var compareUrl = "https://www.garmin.com/en-US/compare/?compareProduct=";
+    selectedProductResultCheckboxes.forEach(function(checkbox, index) {
+        compareUrl += checkbox.value;
+        if (index < selectedProductResultCheckboxes.length - 1) {
+            compareUrl += '&compareProduct=';
+        }
+    });
+    const compareButton = document.getElementById('compareButton');
+    compareButton.disabled = true;
+
+    var comparisonLink = document.getElementById('comparisonLink');
+    const link = document.createElement('a');
+    link.href = compareUrl;
+    link.target = "_blank";
+    link.textContent = "See the comparison on Garmin's page";
+    comparisonLink.appendChild(link);
+    console.log("Compare url: " + compareUrl);
+}
+

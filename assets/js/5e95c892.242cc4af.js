@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkgarminwizard=self.webpackChunkgarminwizard||[]).push([[647],{7121:(e,r,a)=>{a.r(r),a.d(r,{default:()=>t});a(6540);var s=a(4164),n=a(1003),u=a(7559),c=a(2831),i=a(781),d=a(4848);function t(e){return(0,d.jsx)(n.e3,{className:(0,s.A)(u.G.wrapper.docsPages),children:(0,d.jsx)(i.A,{children:(0,c.v)(e.route.routes)})})}}}]);
